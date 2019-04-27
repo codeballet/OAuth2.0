@@ -1,12 +1,15 @@
+{% extends "main.html" %}
+{% block content %}
+{% include "header.html" %}
+
 <html lang="en">
 
 <head>
-	<!-- BEGIN Pre-requisites -->
+<!-- BEGIN Google Pre-requisites -->
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js">
 	</script>
 	<script src="https://apis.google.com/js/client:platform.js?onload=start" async defer>
 	</script>
-	<!-- END Pre-requisites -->
 
 	<script>
 		function start() {
@@ -19,54 +22,146 @@
 			});
 		}
 	</script>
+<!-- END Google Pre-requisites -->
 </head>
 
 <body>
-	<div id='result'></div>
+	<div class="row divider blue">
+			<div class="col-md-12"></div>
+	</div>
+	<div class="row banner main">
+		<div class="col-md-1"></div>
+		<div class="col-md-11 padding-none">
+			<h1>Login</h1>
+		</div>
+	</div>
 
-	<button id="signinButton">Sign in with Google</button>
-	<script>
-	  $('#signinButton').click(function() {
-	    auth2.grantOfflineAccess().then(signInCallback);
-	  });
-	</script>
+	<div class="row padding-top padding-bottom">
+		<div class="col-md-1"></div>
+		<div class="col-md-10 padding-none">
 
-	<script>
-	function signInCallback(authResult) {
-		if (authResult['code']) {
-			// Hide signin button
-			$('#signinButton').attr('style', 'display: none');
+			<!-- BEGIN Google sign in -->
+			<div id='result'></div>
 
-			$.ajax({
-				type: 'POST',
-				url: '/gconnect?state={{ STATE }}',
-				headers: {
-					'X-Requested-With': 'XMLHttpRequest'
-				},
-				contentType: 'application/octet-stream; charset=utf-8',
-				success: function(result) {
-					// Handle server response
-					if (result) {
-						$('#result').html('Login Successful!</br>' + result + '</br>Redirecting...')
-						setTimeout(function() {
-							window.location.href = '/restaurant';
-						}, 4000);
-					}
-					else if (authResult['error']) {
-						console.log('There was an error: ' + authRestult['error']);
-					}
-					else {
-						$('#result').html('Failed to make a server-side call. Check your configuration and console.');
-					}
-				},
-				processData: false,
-				data: authResult['code']
+			<button id="googleSigninButton" type="button" class="btn btn-default btn-lg">
+				Login with Google
+			</button>
+
+			<script>
+			$('#googleSigninButton').click(function() {
+				auth2.grantOfflineAccess().then(signInCallback);
 			});
-		}
-		else {
-			console.log('Error in signInCallback');
-		}
-	}
-	</script>
+			</script>
+
+			<script>
+			function signInCallback(authResult) {
+				if (authResult['code']) {
+					// Hide signin buttons
+					$('#googleSigninButton').attr('style', 'display: none');
+					$('#facebookSigninButton').attr('style', 'display: none');
+
+					$.ajax({
+						type: 'POST',
+						url: '/gconnect?state={{ STATE }}',
+						headers: {
+							'X-Requested-With': 'XMLHttpRequest'
+						},
+						contentType: 'application/octet-stream; charset=utf-8',
+						success: function(result) {
+							// Handle server response
+							if (result) {
+								$('#result').html('Login Successful!</br>' + result + '</br>Redirecting...')
+								setTimeout(function() {
+									window.location.href = '/restaurant';
+								}, 4000);
+							}
+							else if (authResult['error']) {
+								console.log('There was an error: ' + authRestult['error']);
+							}
+							else {
+								$('#result').html('Failed to make a server-side call. Check your configuration and console.');
+							}
+						},
+						processData: false,
+						data: authResult['code']
+					});
+				}
+				else {
+					console.log('Error in signInCallback');
+				}
+			}
+			</script>
+			<!-- END Google sign in -->
+
+
+			<!-- BEGIN Facebook sign in -->
+			<script>
+				window.fbAsyncInit = function() {
+					FB.init({
+					appId      : '1137039969823366',
+					xfbml      : true,
+					version    : 'v3.2'
+					});
+					FB.AppEvents.logPageView();
+				};
+				
+				// Load the SDK asynchronously
+				(function(d, s, id){
+					var js, fjs = d.getElementsByTagName(s)[0];
+					if (d.getElementById(id)) {return;}
+					js = d.createElement(s); js.id = id;
+					js.src = "https://connect.facebook.net/en_US/sdk.js";
+					fjs.parentNode.insertBefore(js, fjs);
+				}(document, 'script', 'facebook-jssdk'));
+
+				function sendTokenToServer() {
+					// Hide signin buttons
+					$('#googleSigninButton').attr('style', 'display: none');
+					$('#facebookSigninButton').attr('style', 'display: none');
+
+					var access_token = FB.getAuthResponse()['accessToken'];
+					console.log('access token: ' + access_token)
+					console.log('Welcome! Fetching your information...')
+					// run simple test of Graph API after login is successful
+					FB.api('/me', function(response) {
+						console.log('Successful login for: ' + response.name);
+						$.ajax({
+							type: 'POST',
+							url: '/fbconnect?state={{ STATE }}',
+							processData: false,
+							data: access_token,
+							contentType: 'application/octet-stream; charset=utf-8',
+							success: function(result) {
+								// handle the server response
+								if (result) {
+									$('#result').html('Login Successful!</br>'
+										+ result + '</br>Redirecting...');
+									setTimeout(function(){
+										window.location.href = '/restaurant';
+									}, 4000);
+								}
+								else {
+									$('#result').html('Failed to make server-side call.');
+								}
+							}
+						});
+					});
+				}
+			</script>
+
+			<button id="facebookSigninButton" type="button" class="btn btn-default btn-lg">
+				<fb:login-button scope='public_profile, email'
+								onlogin='sendTokenToServer();'>
+					<a href='javascript:sendTokenToServer()'>
+						Login with Facebook
+					</a>
+				</fb:login-button>
+			</button>
+			<!-- END FaceBook sign in -->
+
+		</div>
+		<div class="col-md-1"></div>
+	</div>
 </body>
 </html>
+{% endblock %}
